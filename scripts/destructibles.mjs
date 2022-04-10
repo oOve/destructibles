@@ -15,14 +15,58 @@ const MOD_NAME = "destructibles";
 
 const FLAG_DMG = 'damages';
 const FLAG_IMAGES = 'images';
+const FLAG_ORIGINAL_IMAGE = 'original_image';
 
 function Lang(k){
   return game.i18n.localize("DESTRUCTIBLES."+k);
 }
 
 
+Hooks.on('updateActor', (actor, change, options, user_id)=>{
+  let val = change.data?.attributes?.hp.value;
+  if (val != undefined){
+    console.log("Hp change in actor", actor);
+    let token = actor.token;
+    let damages = token.getFlag(MOD_NAME, FLAG_DMG);
+    let images = token.getFlag(MOD_NAME, FLAG_IMAGES);
+    console.log(damages, images);
+    if (damages){
+      let m = actor.data.data.attributes.hp.max;
+      let p = 100*val/m;
+      let v = 101;
+      let img = token.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
+      if (img==undefined){
+        img =  token.data.img;
+        token.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
+      }
+      let i = 0;
+      let ii = -1;
+      for (let dmg of damages){
+        dmg = Number(dmg);
+        if (dmg>p&&v>dmg){
+            v = dmg;
+            ii = i;
+        }
+        ++i;
+      }
+      let target_image = (ii==-1)?img:images[ii];
+      if (token.data.img != target_image){
+        token.update({img:target_image});
+      }
+    }
+  }
+});
 
+Hooks.on('updateToken', (token, change, options, user_id)=>{
+  //check if this
 
+  let val = change.actorData?.data?.attributes?.hp.value;
+  if (val != undefined){
+    console.log('-------------------------------');
+    console.log('HP CHANGE in token:', val, token);
+  }
+
+});
 
 
 
@@ -45,49 +89,6 @@ function createBiEl(){
 }
 
 
-function imageSelector( app, flag_name, title ){
-  let data_path = 'flags.'+MOD_NAME+'.'+flag_name;
-  
-  let grp = document.createElement('div');
-  grp.classList.add('form-group');
-  let label = document.createElement('label');
-  label.innerText = title;  
-  let fields = document.createElement('div');
-  fields.classList.add('form-fields');
-  
-  const button = document.createElement("button");
-  button.classList.add("file-picker");
-  button.type = "button";
-  button.title = "Browse Files";
-  button.tabindex = "-1";
-  button.dataset.target = data_path;
-  button['data-type'] = "imagevideo";
-  button['data-target'] = data_path;
- 
-  button.onclick = app._activateFilePicker.bind(app);
-  
-  let bi = createBiEl()
-
-  const inpt = document.createElement("input");  
-  inpt.name = data_path;
-  inpt.classList.add("image");
-  inpt.type = "text";
-  inpt.title = title;
-  inpt.placeholder = "path/image.png";
-  // Insert the flags current value into the input box  
-  if (app.token.getFlag(MOD_NAME, flag_name)){
-    inpt.value=app.token.getFlag(MOD_NAME, flag_name);
-  }
-  
-  button.append(bi);
-
-  grp.append(label);
-  grp.append(fields);
-  
-  fields.append(button);
-  fields.append(inpt);
-  return grp;
-}
 
 
 function createLabel(text){
@@ -139,28 +140,37 @@ function remove_row(){
   const app_tab = this.html[0].querySelector("div[data-tab='appearance']");
   app_tab.removeChild(this.row);
   this.app.setPosition();
+  
 }
 
 
 function addrow(){
   console.log(this);
+  let row = this.row;
+  if (row===undefined){
+    row = 1000 + this.html[0].querySelectorAll('.'+MOD_NAME+'_image').length;
+  }
+  let flag_name = 'IMAGE'+row;
+  let data_path = 'flags.'+MOD_NAME+'.IMAGE'+row;
   
   let grp = createDiv(['form-group', "slim"])     
   let label=createLabel('Token')
   
   let fields = createDiv(['form-fields']);  
-  const button = createButton("Browse Files", undefined, undefined);
-  let bi = createBiEl();
-  button.append(bi);
 
-  
-  const inpt = document.createElement("input");
   grp.append(label);
   
-  textBoxConfig(fields, this.app, undefined, 'at', 'number', 50, this.dmg, 1);
-  textBoxConfig(fields, this.app, undefined, "Dmg", 'text', 'path/image.png', this.img, undefined)
+  let dmg = textBoxConfig(fields, this.app, "DMG."+row, 'at', 'number', 50, this.dmg, 1);
+  let img = textBoxConfig(fields, this.app, flag_name, "Dmg", 'text', 'path/image.png', this.img, undefined);
+
+  dmg.classList.add(MOD_NAME+'_damage');
+  img.classList.add(MOD_NAME+'_image');
+
+  const button = createButton("Browse Files", undefined, data_path);
+  button.append(createBiEl());
+  button.onclick = this.app._activateFilePicker.bind(this.app);
+
   fields.append(button);
-  fields.append(inpt);
 
   let pbut = createButton("Remove Image", '-', undefined)
   pbut.onclick = remove_row.bind({app:this.app, html:this.html, row: grp});
@@ -173,10 +183,19 @@ function addrow(){
   this.app.setPosition();  
 }
 
+function onSubmitHook(event){
+  console.error(event, this);
+
+  let imgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_image');
+  let dmgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_damage');
+
+  this.app.token.setFlag(MOD_NAME, FLAG_IMAGES, Array.from(imgs).map(i=>i.value));
+  this.app.token.setFlag(MOD_NAME, FLAG_DMG,    Array.from(dmgs).map(i=>i.value));
+}
 
 // Hook into the token config render
 Hooks.on("renderTokenConfig", (app, html) => {
-  document.MASDF = html[0];
+  document.MASDF = html;
   document.MAPP = app;
 
   // Create a new form group
@@ -190,12 +209,7 @@ Hooks.on("renderTokenConfig", (app, html) => {
 
   const app_tab = html[0].querySelector("div[data-tab='appearance']")
   
-  const pbut = document.createElement('button');
-  pbut.type = "button";
-  pbut.textContent = '+';
-  pbut.title = "Add Image";
-  pbut.classList.add("file-picker");
-  pbut.tabindex = "-1";
+  const pbut = createButton("Add Image", '+', undefined);
   pbut.onclick = addrow.bind({app:app, html:html});
   app_tab.children[0].children[1].append(pbut);
   
@@ -214,6 +228,7 @@ Hooks.on("renderTokenConfig", (app, html) => {
 
   // Add the form group to the bottom of the Identity tab
   //html[0].querySelector("div[data-tab='appearance']").append(formGroup);
+  html[0].querySelector('footer button').addEventListener("click", onSubmitHook.bind({app:app, html:html}));
 
   // Set the apps height correctly
   app.setPosition();
