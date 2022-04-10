@@ -151,20 +151,14 @@ function addrow(){
   let fields = createDiv(['form-fields']);  
   const button = createButton("Browse Files", undefined, undefined);
   let bi = createBiEl();
+  button.append(bi);
 
-  const inpt = document.createElement("input");  
-  //inpt.name = data_path;
-  inpt.classList.add("image");
-  inpt.type = "text";
-  inpt.title = "Dmg";
-  inpt.placeholder = "path/image.png";
-  inpt.value = (this.img)?this.img:"";
-  // Insert the flags current value into the input box  
   
-  button.append(bi);  
+  const inpt = document.createElement("input");
   grp.append(label);
   
   textBoxConfig(fields, this.app, undefined, 'at', 'number', 50, this.dmg, 1);
+  textBoxConfig(fields, this.app, undefined, "Dmg", 'text', 'path/image.png', this.img, undefined)
   fields.append(button);
   fields.append(inpt);
 
@@ -213,8 +207,9 @@ Hooks.on("renderTokenConfig", (app, html) => {
 
   let i = 0;
   for(let img of imgs){
-    let dmg = (dmgs.length>=i)?dmgs[i]:0;
+    let dmg = (dmgs.length>i)?dmgs[i]:0;
     addrow.bind({app:app, html:html, img:img, dmg:dmg, row:i})();
+    ++i;
   }
 
   // Add the form group to the bottom of the Identity tab
