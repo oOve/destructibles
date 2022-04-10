@@ -1,0 +1,4 @@
+{  
+    "DESTRUCTIBLES.tile"         : "Destructible Tokens",
+    "DESTRUCTIBLES.description"  : "Module that shows damage progression using multiple images."
+}
