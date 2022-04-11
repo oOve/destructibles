@@ -21,54 +21,69 @@ function Lang(k){
   return game.i18n.localize("DESTRUCTIBLES."+k);
 }
 
+function updateToken(token, hp){
+  let token_doc = token;
+  if (!hasProperty(token, 'getFlag')) token_doc = token.document;
+  let damages = token_doc.getFlag(MOD_NAME, FLAG_DMG);
+  let images = token_doc.getFlag(MOD_NAME, FLAG_IMAGES);
+  //console.log(damages, images);
+  if (damages){    
+    let v = 101;
+    let img = token_doc.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
+    if (img==undefined){
+      img =  token.data.img;
+      token_doc.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
+    }
+    let i = 0;
+    let ii = -1;
+    for (let dmg of damages){
+      dmg = Number(dmg);
+      if (dmg>hp&&v>dmg){
+          v = dmg;
+          ii = i;
+      }
+      ++i;
+    }
+    let target_image = (ii==-1)?img:images[ii];
+    if (token.data.img != target_image){
+      token_doc.update({img:target_image});
+    }
+  }
+}
 
 Hooks.on('updateActor', (actor, change, options, user_id)=>{
-  let val = change.data?.attributes?.hp.value;
+  let val = change.data?.attributes?.hp?.value;  
   if (val != undefined){
-    console.log("Hp change in actor", actor);
-    let token = actor.token;
-    let damages = token.getFlag(MOD_NAME, FLAG_DMG);
-    let images = token.getFlag(MOD_NAME, FLAG_IMAGES);
-    console.log(damages, images);
-    if (damages){
-      let m = actor.data.data.attributes.hp.max;
-      let p = 100*val/m;
-      let v = 101;
-      let img = token.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
-      if (img==undefined){
-        img =  token.data.img;
-        token.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
-      }
-      let i = 0;
-      let ii = -1;
-      for (let dmg of damages){
-        dmg = Number(dmg);
-        if (dmg>p&&v>dmg){
-            v = dmg;
-            ii = i;
-        }
-        ++i;
-      }
-      let target_image = (ii==-1)?img:images[ii];
-      if (token.data.img != target_image){
-        token.update({img:target_image});
-      }
+    //console.log("Hp change in actor", actor);
+    let tk = actor.token;
+    let mx = actor.data.data.attributes.hp.max;
+    let hp = 100*val/mx;
+
+    let tokens = [];
+    if (tk){
+      tokens.push(tk);
+    }else{
+      tokens = canvas.tokens.placeables.filter(t=>actor.id==t.data.actorId);
     }
+    for (let token of tokens){
+      updateToken(token, hp);
+    }
+
   }
 });
 
+
+/*
 Hooks.on('updateToken', (token, change, options, user_id)=>{
   //check if this
 
-  let val = change.actorData?.data?.attributes?.hp.value;
+  let val = change.actorData?.data?.attributes?.hp?.value;
   if (val != undefined){
     console.log('-------------------------------');
     console.log('HP CHANGE in token:', val, token);
   }
-
 });
-
-
+*/
 
 
 
@@ -145,7 +160,7 @@ function remove_row(){
 
 
 function addrow(){
-  console.log(this);
+  //console.log(this);
   let row = this.row;
   if (row===undefined){
     row = 1000 + this.html[0].querySelectorAll('.'+MOD_NAME+'_image').length;
@@ -180,23 +195,28 @@ function addrow(){
   grp.append(fields);
   const app_tab = this.html[0].querySelector("div[data-tab='appearance']");
   app_tab.insertBefore(grp, app_tab.children[1]);
-  this.app.setPosition();  
+  this.app.setPosition();
 }
 
 function onSubmitHook(event){
-  console.error(event, this);
+  //console.error(event, this);
 
-  let imgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_image');
+  let imgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_image');  
   let dmgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_damage');
+  imgs = Array.from(imgs).map(i=>i.value);
+  dmgs = Array.from(dmgs).map(i=>i.value);
 
-  this.app.token.setFlag(MOD_NAME, FLAG_IMAGES, Array.from(imgs).map(i=>i.value));
-  this.app.token.setFlag(MOD_NAME, FLAG_DMG,    Array.from(dmgs).map(i=>i.value));
+  //console.log("Writing flags:", imgs, dmgs);
+
+  this.app.token.setFlag(MOD_NAME, FLAG_IMAGES, imgs);
+  this.app.token.setFlag(MOD_NAME, FLAG_DMG,    dmgs);
 }
 
 // Hook into the token config render
 Hooks.on("renderTokenConfig", (app, html) => {
-  document.MASDF = html;
-  document.MAPP = app;
+  //console.log("onRenderTokenConfig");
+  //console.log(app);
+  //console.log(html);
 
   // Create a new form group
   const formGroup = createDiv(['form-group', "slim"])
@@ -228,7 +248,9 @@ Hooks.on("renderTokenConfig", (app, html) => {
 
   // Add the form group to the bottom of the Identity tab
   //html[0].querySelector("div[data-tab='appearance']").append(formGroup);
-  html[0].querySelector('footer button').addEventListener("click", onSubmitHook.bind({app:app, html:html}));
+  //html[0].querySelector('footer button').addEventListener("click", onSubmitHook.bind({app:app, html:html}));
+  let update_token_button = html[0].querySelector('footer>button:not(.assign-token)');
+  update_token_button.addEventListener("click", onSubmitHook.bind({app:app, html:html}));
 
   // Set the apps height correctly
   app.setPosition();
