@@ -51,6 +51,7 @@ function updateToken(token, hp){
   }
 }
 
+
 Hooks.on('updateActor', (actor, change, options, user_id)=>{
   let val = change.data?.attributes?.hp?.value;  
   if (val != undefined){
@@ -95,6 +96,15 @@ Hooks.once("init", () => {
 
 
 
+/*       
+   _/    _/  _/_/_/   
+  _/    _/    _/      
+ _/    _/    _/       
+_/    _/    _/        
+ _/_/    _/_/_/
+
+*/
+
 function createBiEl(){
   let bi = document.createElement('i');
   bi.classList.add('fas');
@@ -102,8 +112,6 @@ function createBiEl(){
   bi.classList.add('fa-fw');
   return bi;
 }
-
-
 
 
 function createLabel(text){
