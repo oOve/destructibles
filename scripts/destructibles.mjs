@@ -38,7 +38,7 @@ function updateToken(token, hp){
     let ii = -1;
     for (let dmg of damages){
       dmg = Number(dmg);
-      if (dmg>hp&&v>dmg){
+      if (dmg>=hp&&v>dmg){
           v = dmg;
           ii = i;
       }
@@ -183,7 +183,7 @@ function addrow(){
 
   grp.append(label);
   
-  let dmg = textBoxConfig(fields, this.app, "DMG."+row, 'at', 'number', 50, this.dmg, 1);
+  let dmg = textBoxConfig(fields, this.app, "DMG."+row, 'at %', 'number', 50, this.dmg, 1);
   let img = textBoxConfig(fields, this.app, flag_name, "Dmg", 'text', 'path/image.png', this.img, undefined);
 
   dmg.classList.add(MOD_NAME+'_damage');
