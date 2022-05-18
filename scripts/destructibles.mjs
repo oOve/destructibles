@@ -78,11 +78,14 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
 Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
   // If configured so, this will stop all effect and overlay icons shown on destructible tokens.  
   let isDestructible = token.data.flags.destructibles?.images?.length > 0;
+
+  console.warn(token, change, options, isDestructible);
+
   if (isDestructible){
     if (game.settings.get(MOD_NAME, SUPPRESS_OVERLAY) && change.overlayEffect ){
       return false;
     }
-    if (game.settings.get(MOD_NAME, SUPPRESS_EFFECTS) && change.effects?.length) {
+    if (game.settings.get(MOD_NAME, SUPPRESS_EFFECTS) && ( (change.effects?.length) || (change.actorData?.effects?.length) )) {
       return false;
     }
   }
