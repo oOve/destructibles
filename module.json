@@ -2,7 +2,7 @@
     "name": "destructibles",
     "title": "Destructible Tokens",
     "description": "Show damage progression on your tokens, be it furniture, walls or players",
-    "version": "0.1.2",
+    "version": "0.1.5",
     "minimumCoreVersion": "9",
     "compatibleCoreVersion": "9",
     "author": "o_Ove",
@@ -22,7 +22,7 @@
     "socket": false,
     "esmodules": ["./scripts/destructibles.mjs"],    
     "url": "https://github.com/oOve/destructibles",
-    "download": "https://github.com/oOve/destructibles/archive/0.1.2.zip",
+    "download": "https://github.com/oOve/destructibles/archive/0.1.5.zip",
     "manifest": "https://github.com/oOve/destructibles/releases/latest/download/module.json",
 
     "license": "LICENSE",

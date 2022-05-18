@@ -17,6 +17,9 @@ const FLAG_DMG = 'damages';
 const FLAG_IMAGES = 'images';
 const FLAG_ORIGINAL_IMAGE = 'original_image';
 
+const SUPPRESS_OVERLAY = "suppress_overlay";
+const SUPPRESS_EFFECTS = "suppress_effects";
+
 function Lang(k){
   return game.i18n.localize("DESTRUCTIBLES."+k);
 }
@@ -69,29 +72,41 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
     for (let token of tokens){
       updateToken(token, hp);
     }
-
   }
 });
 
-
-/*
-Hooks.on('updateToken', (token, change, options, user_id)=>{
-  //check if this
-
-  let val = change.actorData?.data?.attributes?.hp?.value;
-  if (val != undefined){
-    console.log('-------------------------------');
-    console.log('HP CHANGE in token:', val, token);
+Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
+  // If configured so, this will stop all effect and overlay icons shown on destructible tokens.  
+  let isDestructible = token.data.flags.destructibles?.images?.length > 0;
+  if (isDestructible){
+    if (game.settings.get(MOD_NAME, SUPPRESS_OVERLAY) && change.overlayEffect ){
+      return false;
+    }
+    if (game.settings.get(MOD_NAME, SUPPRESS_EFFECTS) && change.effects?.length) {
+      return false;
+    }
   }
 });
-*/
-
-
 
 
 // Settings:
 Hooks.once("init", () => {    
- 
+  game.settings.register(MOD_NAME, SUPPRESS_OVERLAY, {
+    name: "Suppress Overlay Icons",
+    hint: "Prevent overlay icons on all Destructibles",
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+  game.settings.register(MOD_NAME, SUPPRESS_EFFECTS, {
+    name: "Suppress Effect Icons",
+    hint: "Prevent all overlay icons being displayed on Destructibles",
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  }); 
 });
 
 
