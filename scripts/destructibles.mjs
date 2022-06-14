@@ -10,7 +10,6 @@
    ░       ░       ░         ░ ░  
  ░                 ░              
  */
-
 const MOD_NAME = "destructibles";
 
 const FLAG_DMG = 'damages';
@@ -62,6 +61,19 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
     let tk = actor.token;
     let mx = actor.data.data.attributes.hp.max;
     let hp = 100*val/mx;
+    
+    /*
+    if(hp==0){
+      let sounds = [
+      './sound/TP_Pot_Shatter1.wav',
+      './sound/TP_Pot_Shatter2.wav',
+      './sound/TP_Pot_Shatter3.wav',
+      './sound/OOT_Pot_Shatter.wav'
+      ];
+      let i = Math.floor(Math.random() * 4);
+      new Sequence().sound(sounds[i]).play();
+    }
+    */
 
     let tokens = [];
     if (tk){
@@ -78,8 +90,6 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
 Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
   // If configured so, this will stop all effect and overlay icons shown on destructible tokens.  
   let isDestructible = token.data.flags.destructibles?.images?.length > 0;
-
-  console.warn(token, change, options, isDestructible);
 
   if (isDestructible){
     if (game.settings.get(MOD_NAME, SUPPRESS_OVERLAY) && change.overlayEffect ){
