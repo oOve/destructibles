@@ -10,6 +10,7 @@
    ░       ░       ░         ░ ░  
  ░                 ░              
  */
+
 const MOD_NAME = "destructibles";
 
 const FLAG_DMG = 'damages';
@@ -33,7 +34,7 @@ function updateToken(token, hp){
     let v = 101;
     let img = token_doc.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
     if (img==undefined){
-      img =  token.data.img;
+      img =  token.texture.src;
       token_doc.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
     }
     let i = 0;
@@ -47,7 +48,7 @@ function updateToken(token, hp){
       ++i;
     }
     let target_image = (ii==-1)?img:images[ii];
-    if (token.data.img != target_image){
+    if (token.texture.src != target_image){
       token_doc.update({img:target_image});
     }
   }
@@ -55,31 +56,18 @@ function updateToken(token, hp){
 
 
 Hooks.on('updateActor', (actor, change, options, user_id)=>{
-  let val = change.data?.attributes?.hp?.value;  
+  let val = change.system?.attributes?.hp?.value;
   if (val != undefined){
     //console.log("Hp change in actor", actor);
     let tk = actor.token;
-    let mx = actor.data.data.attributes.hp.max;
+    let mx = actor.system.attributes.hp.max;
     let hp = 100*val/mx;
-    
-    /*
-    if(hp==0){
-      let sounds = [
-      './sound/TP_Pot_Shatter1.wav',
-      './sound/TP_Pot_Shatter2.wav',
-      './sound/TP_Pot_Shatter3.wav',
-      './sound/OOT_Pot_Shatter.wav'
-      ];
-      let i = Math.floor(Math.random() * 4);
-      new Sequence().sound(sounds[i]).play();
-    }
-    */
 
     let tokens = [];
     if (tk){
       tokens.push(tk);
     }else{
-      tokens = canvas.tokens.placeables.filter(t=>actor.id==t.data.actorId);
+      tokens = canvas.tokens.placeables.filter(t=>actor.id==t.document.actorId);
     }
     for (let token of tokens){
       updateToken(token, hp);
@@ -89,13 +77,12 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
 
 Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
   // If configured so, this will stop all effect and overlay icons shown on destructible tokens.  
-  let isDestructible = token.data.flags.destructibles?.images?.length > 0;
-
+  let isDestructible = token.flags.destructibles?.images?.length > 0;
   if (isDestructible){
     if (game.settings.get(MOD_NAME, SUPPRESS_OVERLAY) && change.overlayEffect ){
       return false;
     }
-    if (game.settings.get(MOD_NAME, SUPPRESS_EFFECTS) && ( (change.effects?.length) || (change.actorData?.effects?.length) )) {
+    if (game.settings.get(MOD_NAME, SUPPRESS_EFFECTS) && change.effects?.length) {
       return false;
     }
   }
