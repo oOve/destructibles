@@ -25,7 +25,7 @@
     "./scripts/destructibles.mjs"
   ],
   "url": "https://github.com/oOve/destructibles",
-  "download": "https://github.com/oOve/destructibles/archive/0.1.5.zip",
+  "download": "https://github.com/oOve/destructibles/archive/0.1.6.zip",
   "manifest": "https://github.com/oOve/destructibles/releases/latest/download/module.json",
   "license": "LICENSE",
   "readme": "README.md",
