@@ -18,12 +18,13 @@ const FLAG_ORIGINAL_IMAGE = 'original_image';
 
 const SUPPRESS_OVERLAY = "suppress_overlay";
 const SUPPRESS_EFFECTS = "suppress_effects";
+const EMIT_SOUND = "emit_sound";
 
 function Lang(k){
   return game.i18n.localize("DESTRUCTIBLES."+k);
 }
 
-function updateToken(token, hp){
+async function updateToken(token, hp){
   let token_doc = token;
   if (!hasProperty(token, 'getFlag')) token_doc = token.document;
   let damages = token_doc.getFlag(MOD_NAME, FLAG_DMG);
@@ -33,7 +34,7 @@ function updateToken(token, hp){
     let v = 101;
     let img = token_doc.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
     if (img==undefined){
-      img =  token.data.img;
+      img =  token.img;
       token_doc.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
     }
     let i = 0;
@@ -47,7 +48,9 @@ function updateToken(token, hp){
       ++i;
     }
     let target_image = (ii==-1)?img:images[ii];
+    console.warn(token);
     if (token.data.img != target_image){
+      await fetch(target_image);
       token_doc.update({img:target_image});
     }
   }
@@ -55,15 +58,17 @@ function updateToken(token, hp){
 
 
 Hooks.on('updateActor', (actor, change, options, user_id)=>{
-  let val = change.data?.attributes?.hp?.value;  
+
+  let val = change.data?.attributes?.hp?.value;
+  if (val == undefined) val = change.system?.attributes?.hp?.value;
+
   if (val != undefined){
-    //console.log("Hp change in actor", actor);
     let tk = actor.token;
     let mx = actor.data.data.attributes.hp.max;
     let hp = 100*val/mx;
     
     /*
-    if(hp==0){
+    if(hp==0 && game.settings.get(MOD_NAME, EMIT_SOUND) ){
       let sounds = [
       './sound/TP_Pot_Shatter1.wav',
       './sound/TP_Pot_Shatter2.wav',
@@ -73,7 +78,7 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
       let i = Math.floor(Math.random() * 4);
       new Sequence().sound(sounds[i]).play();
     }
-    */
+    //*/
 
     let tokens = [];
     if (tk){
@@ -87,9 +92,12 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
   }
 });
 
+
+
 Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
   // If configured so, this will stop all effect and overlay icons shown on destructible tokens.  
-  let isDestructible = token.data.flags.destructibles?.images?.length > 0;
+  //let isDestructible = token.data.flags.destructibles?.images?.length > 0;
+  let isDestructible = token.getFlag(MOD_NAME, FLAG_IMAGES)?.length > 0;  
 
   if (isDestructible){
     if (game.settings.get(MOD_NAME, SUPPRESS_OVERLAY) && change.overlayEffect ){
@@ -100,6 +108,7 @@ Hooks.on('preUpdateToken', (token, change, options, user_id)=>{
     }
   }
 });
+
 
 
 // Settings:
@@ -119,7 +128,28 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: false
-  }); 
+  });
+
+  game.settings.register(MOD_NAME, EMIT_SOUND, {
+    name: "Emit Sound",
+    hint: "Emits sounds on destruction",
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+  
+
+  function tokenVidAnim(wrapped, ...args) {
+    wrapped(...args);
+    let len = this.document.flags?.[MOD_NAME]?.[FLAG_IMAGES]?.length;
+    if (len){
+      //this.sourceElement.autoplay = false;
+      this.sourceElement.loop = false;
+    }
+  }
+  libWrapper.register(MOD_NAME,"Token.prototype.refresh",tokenVidAnim,"WRAPPER");
+
 });
 
 
@@ -163,10 +193,10 @@ function textBoxConfig(parent, app, flag_name, title, type="number",
   if(step) input.step = step;
   if(placeholder) input.placeholder = placeholder;
 
-  if(app.token.getFlag(MOD_NAME, flag_name)){
+  let v = app.token?.[MOD_NAME]?.[flag_name];
+  if(v){
     input.value=app.token.getFlag(MOD_NAME, flag_name);
-  }
-  else if(default_value!=null){
+  } else if(default_value!=null){
     input.value = default_value;
   }
   parent.append(input);
@@ -241,11 +271,23 @@ function onSubmitHook(event){
   let dmgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_damage');
   imgs = Array.from(imgs).map(i=>i.value);
   dmgs = Array.from(dmgs).map(i=>i.value);
-
-  //console.log("Writing flags:", imgs, dmgs);
-
-  this.app.token.setFlag(MOD_NAME, FLAG_IMAGES, imgs);
-  this.app.token.setFlag(MOD_NAME, FLAG_DMG,    dmgs);
+  console.warn("Writing flags:", imgs, dmgs, this.app.token);  
+  // New v10 shim
+  let t =  (this.app.token ?? this.app.object);
+  t.setFlag(MOD_NAME, FLAG_IMAGES, imgs);
+  t.setFlag(MOD_NAME, FLAG_DMG,    dmgs);
+  
+  /*  
+  let data = {};
+  data[ 'flags.' + MOD_NAME + '.' + FLAG_IMAGES ] = imgs;
+  data[ 'flags.' + MOD_NAME + '.' + FLAG_DMG ]    = dmgs; 
+  if (this.app.token.updateSource){
+    this.app.token.updateSource(data); // Updating the prototype
+    this.app.token.update(data);
+  }else{
+    this.app.token.update(data);       // Updating the token
+  }
+  */
 }
 
 // Hook into the token config render
@@ -253,6 +295,7 @@ Hooks.on("renderTokenConfig", (app, html) => {
   //console.log("onRenderTokenConfig");
   //console.log(app);
   //console.log(html);
+  //window.MAPP = app;
 
   // Create a new form group
   const formGroup = createDiv(['form-group', "slim"])
@@ -269,6 +312,8 @@ Hooks.on("renderTokenConfig", (app, html) => {
   pbut.onclick = addrow.bind({app:app, html:html});
   app_tab.children[0].children[1].append(pbut);
   
+  console.error(app);
+  // V9 and V10 shim way
   let imgs = app.token.getFlag(MOD_NAME, FLAG_IMAGES);
   let dmgs = app.token.getFlag(MOD_NAME, FLAG_DMG);
   

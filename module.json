@@ -1,10 +1,11 @@
 {
-    "name": "destructibles",
+    "id": "destructibles",
     "title": "Destructible Tokens",
     "description": "Show damage progression on your tokens, be it furniture, walls or players",
-    "version": "0.1.5",
-    "minimumCoreVersion": "9",
-    "compatibleCoreVersion": "9",
+    "version": "10.0.1",
+    "compatibility": {
+      "minimum": "10",
+      "verified": "10"},
     "author": "o_Ove",
 	  "authors": [{
       "name": "o_Ove",
@@ -18,11 +19,10 @@
         "path": "lang/en.json"
       }
     ],
-    "dependencies":[],
     "socket": false,
     "esmodules": ["./scripts/destructibles.mjs"],    
     "url": "https://github.com/oOve/destructibles",
-    "download": "https://github.com/oOve/destructibles/archive/0.1.5.zip",
+    "download": "https://github.com/oOve/destructibles/archive/10.0.1.zip",
     "manifest": "https://github.com/oOve/destructibles/releases/latest/download/module.json",
 
     "license": "LICENSE",
@@ -34,8 +34,10 @@
         "name": "destructibles",
         "label": "Destructible Tokens",
         "path": "./packs/destructibles.db",
-        "type": "Actor"
+        "type": "Actor",
+        "system": "5e"
       }
     ],    
-    "library": false
+    "library": false,
+    "minimumCoreVersion": 10
   }

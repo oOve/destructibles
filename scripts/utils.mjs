@@ -185,6 +185,18 @@ export class Vec2 {
 
 
 /**
+ * 
+ * @param {String} str String to test
+ * @param {String} rule matching rule (e.g., something* )
+ * @returns {Boolean}
+ */
+function matchRuleShort(str, rule) {
+    var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+    return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str);
+  }
+
+
+/**
  * @param {Array} arr1 Array to reorder
  * @param {Array} arr2 Array to sort, and used as indices for re-order array
  * @returns {Array} Array 1 sorted by array 2
