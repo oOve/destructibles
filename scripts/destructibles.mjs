@@ -49,7 +49,7 @@ async function updateToken(token, hp){
     }
     let target_image = (ii==-1)?img:images[ii];
     console.warn(token);
-    if (token.data.img != target_image){
+    if (token.texture.src != target_image){
       await fetch(target_image);
       token_doc.update({img:target_image});
     }
@@ -59,12 +59,12 @@ async function updateToken(token, hp){
 
 Hooks.on('updateActor', (actor, change, options, user_id)=>{
 
-  let val = change.data?.attributes?.hp?.value;
+  let val = change.system?.attributes?.hp?.value;
   if (val == undefined) val = change.system?.attributes?.hp?.value;
 
   if (val != undefined){
     let tk = actor.token;
-    let mx = actor.data.data.attributes.hp.max;
+    let mx = actor.system.attributes.hp.max;
     let hp = 100*val/mx;
     
     /*
@@ -84,7 +84,7 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
     if (tk){
       tokens.push(tk);
     }else{
-      tokens = canvas.tokens.placeables.filter(t=>actor.id==t.data.actorId);
+      tokens = canvas.tokens.placeables.filter(t=>actor.id==t.document.actorId);
     }
     for (let token of tokens){
       updateToken(token, hp);
