@@ -18,7 +18,7 @@ const FLAG_ORIGINAL_IMAGE = 'original_image';
 
 const SUPPRESS_OVERLAY = "suppress_overlay";
 const SUPPRESS_EFFECTS = "suppress_effects";
-const EMIT_SOUND = "emit_sound";
+// const EMIT_SOUND = "emit_sound";
 
 function Lang(k){
   return game.i18n.localize("DESTRUCTIBLES."+k);
@@ -29,7 +29,7 @@ async function updateToken(token, hp){
   if (!hasProperty(token, 'getFlag')) token_doc = token.document;
   let damages = token_doc.getFlag(MOD_NAME, FLAG_DMG);
   let images = token_doc.getFlag(MOD_NAME, FLAG_IMAGES);
-  //console.log(damages, images);
+  
   if (damages){    
     let v = 101;
     let img = token_doc.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
@@ -130,6 +130,7 @@ Hooks.once("init", () => {
     default: false
   });
 
+  /*
   game.settings.register(MOD_NAME, EMIT_SOUND, {
     name: "Emit Sound",
     hint: "Emits sounds on destruction",
@@ -138,7 +139,7 @@ Hooks.once("init", () => {
     type: Boolean,
     default: false
   });
-  
+  */  
 
   function tokenVidAnim(wrapped, ...args) {
     wrapped(...args);
@@ -226,7 +227,6 @@ function remove_row(){
 
 
 function addrow(){
-  //console.log(this);
   let row = this.row;
   if (row===undefined){
     row = 1000 + this.html[0].querySelectorAll('.'+MOD_NAME+'_image').length;
@@ -265,8 +265,6 @@ function addrow(){
 }
 
 function onSubmitHook(event){
-  //console.error(event, this);
-
   let imgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_image');  
   let dmgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_damage');
   imgs = Array.from(imgs).map(i=>i.value);
@@ -292,11 +290,6 @@ function onSubmitHook(event){
 
 // Hook into the token config render
 Hooks.on("renderTokenConfig", (app, html) => {
-  //console.log("onRenderTokenConfig");
-  //console.log(app);
-  //console.log(html);
-  //window.MAPP = app;
-
   // Create a new form group
   const formGroup = createDiv(['form-group', "slim"])
   // Create a label for this setting  
@@ -312,7 +305,6 @@ Hooks.on("renderTokenConfig", (app, html) => {
   pbut.onclick = addrow.bind({app:app, html:html});
   app_tab.children[0].children[1].append(pbut);
   
-  console.error(app);
   // V9 and V10 shim way
   let imgs = app.token.getFlag(MOD_NAME, FLAG_IMAGES);
   let dmgs = app.token.getFlag(MOD_NAME, FLAG_DMG);
