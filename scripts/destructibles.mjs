@@ -28,13 +28,15 @@ async function updateToken(token, hp){
   let token_doc = token;
   if (!hasProperty(token, 'getFlag')) token_doc = token.document;
   let damages = token_doc.getFlag(MOD_NAME, FLAG_DMG);
-  let images = token_doc.getFlag(MOD_NAME, FLAG_IMAGES);
-  
+  let images  = token_doc.getFlag(MOD_NAME, FLAG_IMAGES);
+
+
   if (damages){    
     let v = 101;
     let img = token_doc.getFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE);
     if (img==undefined){
-      img =  token.img;
+      img =  token.texture.src;      
+
       token_doc.setFlag(MOD_NAME, FLAG_ORIGINAL_IMAGE, img);
     }
     let i = 0;
@@ -48,7 +50,7 @@ async function updateToken(token, hp){
       ++i;
     }
     let target_image = (ii==-1)?img:images[ii];
-    console.warn(token);
+    
     if (token.texture.src != target_image){
       await fetch(target_image);
       token_doc.update({img:target_image});
@@ -67,18 +69,6 @@ Hooks.on('updateActor', (actor, change, options, user_id)=>{
     let mx = actor.system.attributes.hp.max;
     let hp = 100*val/mx;
     
-    /*
-    if(hp==0 && game.settings.get(MOD_NAME, EMIT_SOUND) ){
-      let sounds = [
-      './sound/TP_Pot_Shatter1.wav',
-      './sound/TP_Pot_Shatter2.wav',
-      './sound/TP_Pot_Shatter3.wav',
-      './sound/OOT_Pot_Shatter.wav'
-      ];
-      let i = Math.floor(Math.random() * 4);
-      new Sequence().sound(sounds[i]).play();
-    }
-    //*/
 
     let tokens = [];
     if (tk){
@@ -269,7 +259,7 @@ function onSubmitHook(event){
   let dmgs = this.html[0].querySelectorAll('.'+MOD_NAME+'_damage');
   imgs = Array.from(imgs).map(i=>i.value);
   dmgs = Array.from(dmgs).map(i=>i.value);
-  console.warn("Writing flags:", imgs, dmgs, this.app.token);  
+  
   // New v10 shim
   let t =  (this.app.token ?? this.app.object);
   t.setFlag(MOD_NAME, FLAG_IMAGES, imgs);
